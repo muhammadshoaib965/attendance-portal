@@ -150,7 +150,7 @@
       <div class="nav-item active" onclick="navigate('dashboard')"><span class="nav-icon">📊</span> My Dashboard</div>
       <div class="nav-item" onclick="navigate('attendance')"><span class="nav-icon">📋</span> My Attendance</div>
       <div class="nav-item" onclick="navigate('leave')"><span class="nav-icon">📅</span> Apply Leave</div>
-      <div class="nav-item" onclick="navigate('corrections')"><span class="nav-icon">✏️</span> Punch Correction</div>
+      <div class="nav-item" onclick="navigate('corrections')"><span class="nav-icon">✏️</span> Entry Correction</div>
     </div>
     <div class="sidebar-footer">
       <div class="nav-item" onclick="openPwModal()"><span class="nav-icon">🔑</span> Change Password</div>
@@ -217,7 +217,7 @@
           <div class="card-header"><h3>Quick Actions</h3></div>
           <div class="card-body" style="display:flex;gap:10px;flex-wrap:wrap;">
             <button class="btn btn-primary" onclick="navigate('leave')">📅 Apply for Leave</button>
-            <button class="btn btn-ghost" onclick="navigate('corrections')">✏️ Request Punch Correction</button>
+            <button class="btn btn-ghost" onclick="navigate('corrections')">✏️ Request Entry Correction</button>
             <button class="btn btn-ghost" onclick="navigate('attendance')">📋 View Full Attendance</button>
           </div>
         </div>
@@ -270,8 +270,8 @@
       </div>
 
       <div id="page-corrections" class="page">
-        <div class="section-title">Punch Correction Request</div>
-        <div class="section-sub">Notice a missing or wrong punch? Request a fix — works great from your phone too.</div>
+        <div class="section-title">Entry Correction Request</div>
+        <div class="section-sub">Notice a missing or wrong entry? Request a fix — works great from your phone too.</div>
 
         <div class="card">
           <div class="card-body">
@@ -341,7 +341,7 @@ function statusBadge(status) {
   else if (s.includes('half')) cls = 'half';
   else if (s.includes('holiday')) cls = 'holiday';
   else if (s.includes('offday')) cls = 'offday';
-  return `<span class="badge badge-${cls}">${status}</span>`;
+  return `<span class="badge badge-${cls}">${status.replace('Punch','Entry')}</span>`;
 }
 
 (async function initPage() {
@@ -394,7 +394,7 @@ function navigate(pageId) {
   document.querySelectorAll('.nav-item').forEach(n => {
     if (n.getAttribute('onclick')?.includes(`'${pageId}'`)) n.classList.add('active');
   });
-  const titles = { dashboard: 'My Dashboard', attendance: 'My Attendance', leave: 'Apply Leave', corrections: 'Punch Correction' };
+  const titles = { dashboard: 'My Dashboard', attendance: 'My Attendance', leave: 'Apply Leave', corrections: 'Entry Correction' };
   document.getElementById('topbarTitle').textContent = titles[pageId];
   document.getElementById('sidebar').classList.remove('open');
 
@@ -440,19 +440,24 @@ async function loadMyAttendance() {
 
   if (report) {
     document.getElementById('attSummaryBar').innerHTML = `
-      <div class="summary-bar">
-        <div class="summary-chip">📅 Work Days: <span>${report.working_days}</span></div>
-        <div class="summary-chip">🎯 Required: <span>${hrs(report.required_hours)}</span></div>
-        <div class="summary-chip">✅ Spent: <span>${hrs(report.spent_hours)}</span></div>
-        <div class="summary-chip">⏳ Remaining: <span>${hrs(report.remaining_hours)}</span></div>
-        <div class="summary-chip">🔥 Overtime: <span style="color:var(--warning)">${hrs(report.overtime_hours)}</span></div>
-        <div class="summary-chip">❌ Absent: <span style="color:${report.absent_days>0?'var(--danger)':'var(--success)'}">${report.absent_days}</span></div>
-        <div class="summary-chip">⏰ Late: <span>${report.late_days}</span></div>
-        <div class="summary-chip">📊 Attendance: <span style="color:${report.attendance_pct>=80?'var(--success)':'var(--danger)'}">${report.attendance_pct}%</span></div>
-        <div class="summary-chip">🏖 Casual: <span>${report.leave_casual}</span></div>
-        <div class="summary-chip">🏖 Earned: <span>${report.leave_earned}</span></div>
-        <div class="summary-chip">🏖 Official: <span>${report.leave_official}</span></div>
-        <div class="summary-chip">🏖 Unpaid: <span>${report.leave_unpaid}</span></div>
+      <div class="table-wrap" style="margin-bottom:18px;">
+        <table style="text-align:center;">
+          <thead><tr>
+            <th>Work Days</th><th>Required</th><th>Spent</th><th>Remaining</th><th>Overtime</th>
+            <th>Absent</th><th>Late</th><th>Attendance %</th><th>Casual</th><th>Earned</th><th>Official</th><th>Unpaid</th>
+          </tr></thead>
+          <tbody><tr>
+            <td><strong>${report.working_days}</strong></td>
+            <td>${hrs(report.required_hours)}</td>
+            <td>${hrs(report.spent_hours)}</td>
+            <td>${hrs(report.remaining_hours)}</td>
+            <td style="color:var(--warning);font-weight:700;">${hrs(report.overtime_hours)}</td>
+            <td style="color:${report.absent_days>0?'var(--danger)':'var(--success)'};font-weight:700;">${report.absent_days}</td>
+            <td>${report.late_days}</td>
+            <td style="color:${report.attendance_pct>=80?'var(--success)':'var(--danger)'};font-weight:700;">${report.attendance_pct}%</td>
+            <td>${report.leave_casual}</td><td>${report.leave_earned}</td><td>${report.leave_official}</td><td>${report.leave_unpaid}</td>
+          </tr></tbody>
+        </table>
       </div>`;
   }
 

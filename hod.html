@@ -295,7 +295,7 @@
 
       <!-- CORRECTIONS -->
       <div id="page-corrections" class="page">
-        <div class="section-title">Punch Correction Approvals</div>
+        <div class="section-title">Entry Correction Approvals</div>
         <div class="section-sub">Approving auto-corrects the attendance record instantly.</div>
 
         <div class="filter-tabs">
@@ -407,7 +407,7 @@ function statusBadge(status) {
   else if (s.includes('half')) cls = 'half';
   else if (s.includes('holiday')) cls = 'holiday';
   else if (s.includes('offday')) cls = 'offday';
-  return `<span class="badge badge-${cls}">${status}</span>`;
+  return `<span class="badge badge-${cls}">${status.replace('Punch','Entry')}</span>`;
 }
 function openModal(id) { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
@@ -465,7 +465,7 @@ function navigate(pageId) {
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('page-' + pageId).classList.add('active');
   document.querySelectorAll('.nav-item').forEach(n => { if (n.getAttribute('onclick')?.includes(`'${pageId}'`)) n.classList.add('active'); });
-  const titles = { dashboard:'Dashboard', employees:'Employees', reports:'Reports', leaves:'Leave Approvals', corrections:'Punch Corrections' };
+  const titles = { dashboard:'Dashboard', employees:'Employees', reports:'Reports', leaves:'Leave Approvals', corrections:'Entry Corrections' };
   document.getElementById('topbarTitle').textContent = titles[pageId];
   document.getElementById('sidebar').classList.remove('open');
   if (pageId === 'reports') populateReportEmployeePicker();
@@ -521,7 +521,7 @@ function renderStatusChart(counts, absent) {
   state.charts.status = new Chart(ctx, {
     type: 'doughnut',
     data: {
-      labels: ['Present','Late Arrival','Half Day','Absent','Missing Punch'],
+      labels: ['Present','Late Arrival','Half Day','Absent','Missing Entry'],
       datasets: [{ data: [counts.Present, counts['Late Arrival'], counts['Half Day'], absent, counts['Missing Punch']], backgroundColor: ['#10B981','#F59E0B','#FB923C','#EF4444','#EC4899'], borderWidth: 2, borderColor: '#fff' }]
     },
     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { padding: 14, font: { size: 11 } } } }, cutout: '65%' }
@@ -684,16 +684,24 @@ async function renderIndividualReport(r, start, end) {
           </div>
           <button class="btn btn-primary btn-sm" onclick="openAddManualEntry('${r.emp_id}')">+ Add Manual Entry</button>
         </div>
-        <div class="summary-bar">
-          <div class="summary-chip">📅 Work Days: <span>${r.working_days}</span></div>
-          <div class="summary-chip">🎯 Required: <span>${hrs(r.required_hours)}</span></div>
-          <div class="summary-chip">✅ Spent: <span>${hrs(r.spent_hours)}</span></div>
-          <div class="summary-chip">⏳ Remaining: <span>${hrs(r.remaining_hours)}</span></div>
-          <div class="summary-chip">🔥 Overtime: <span style="color:var(--warning)">${hrs(r.overtime_hours)}</span></div>
-          <div class="summary-chip">❌ Absent: <span style="color:${r.absent_days>0?'var(--danger)':'var(--success)'}">${r.absent_days}</span></div>
-          <div class="summary-chip">⏰ Late: <span>${r.late_days}</span></div>
-          <div class="summary-chip">📊 Attendance: <span style="color:${r.attendance_pct>=80?'var(--success)':'var(--danger)'};font-size:15px;">${r.attendance_pct}%</span></div>
-          <div class="summary-chip">🏖 Leave (C/E/O/U): <span>${r.leave_casual}/${r.leave_earned}/${r.leave_official}/${r.leave_unpaid}</span></div>
+                <div class="table-wrap" style="margin-bottom:16px;">
+          <table style="text-align:center;">
+            <thead><tr>
+              <th>Work Days</th><th>Required</th><th>Spent</th><th>Remaining</th><th>Overtime</th>
+              <th>Absent</th><th>Late</th><th>Attendance %</th><th>Leave (C/E/O/U)</th>
+            </tr></thead>
+            <tbody><tr>
+              <td><strong>${r.working_days}</strong></td>
+              <td>${hrs(r.required_hours)}</td>
+              <td>${hrs(r.spent_hours)}</td>
+              <td>${hrs(r.remaining_hours)}</td>
+              <td style="color:var(--warning);font-weight:700;">${hrs(r.overtime_hours)}</td>
+              <td style="color:${r.absent_days>0?'var(--danger)':'var(--success)'};font-weight:700;">${r.absent_days}</td>
+              <td>${r.late_days}</td>
+              <td style="color:${r.attendance_pct>=80?'var(--success)':'var(--danger)'};font-weight:700;">${r.attendance_pct}%</td>
+              <td>${r.leave_casual}/${r.leave_earned}/${r.leave_official}/${r.leave_unpaid}</td>
+            </tr></tbody>
+          </table>
         </div>
         <div class="table-wrap"><table>
           <thead><tr><th>Date</th><th>Check-In</th><th>Check-Out</th><th>Status</th><th>Hours</th><th>Overtime</th><th>Action</th></tr></thead>

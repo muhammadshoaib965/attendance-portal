@@ -425,6 +425,26 @@ const _DB_impl = {
     return res.json();
   },
 
+  async createEmployeeAccount(payload) {
+    const token = await this.getAccessToken();
+    const res = await fetch('/api/admin/create-employee', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify(payload)
+    });
+    return res.json();
+  },
+
+  async deleteUserAccount(targetUserId) {
+    const token = await this.getAccessToken();
+    const res = await fetch('/api/admin/delete-user', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ targetUserId })
+    });
+    return res.json();
+  },
+
   async resetUserPassword(targetUserId, newPassword) {
     const token = await this.getAccessToken();
     const res = await fetch('/api/admin/reset-password', {

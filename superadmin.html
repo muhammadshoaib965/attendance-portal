@@ -139,7 +139,6 @@
       <div class="nav-item" onclick="navigate('organization')"><span class="nav-icon">🏢</span> Organization</div>
       <div class="nav-item" onclick="navigate('employees')"><span class="nav-icon">👥</span> Employees</div>
       <div class="nav-item" onclick="navigate('devices')"><span class="nav-icon">📟</span> Machines</div>
-      <div class="nav-item" onclick="navigate('access')"><span class="nav-icon">🔐</span> Access Control</div>
       <div class="nav-item" onclick="navigate('calendar')"><span class="nav-icon">🗓️</span> Calendar</div>
       <div class="nav-item" onclick="navigate('approvals')"><span class="nav-icon">✅</span> Approvals <span class="nav-badge" id="apprBadge" style="display:none;">0</span></div>
       <div class="nav-item" onclick="navigate('reports')"><span class="nav-icon">📋</span> Reports</div>
@@ -225,27 +224,34 @@
       </div>
 
       <div id="page-employees" class="page">
-        <div class="section-title">All Employees</div>
-        <div class="section-sub">Manage employees across every department.</div>
+        <div class="section-title">Employees</div>
+        <div class="section-sub">Every person in the system — Employee, HOD, or SuperAdmin — managed in one place.</div>
 
         <div class="card">
-          <div class="card-header"><h3>Add Employee</h3></div>
+          <div class="card-header"><h3>Add Person</h3><p>Creates their record and, optionally, their portal login — together.</p></div>
           <div class="card-body">
-            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px;">
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:14px;">
               <div class="field" style="margin:0;"><label>Employee ID</label><input type="text" id="newEmpId"></div>
               <div class="field" style="margin:0;"><label>Full Name</label><input type="text" id="newEmpName"></div>
               <div class="field" style="margin:0;"><label>Department</label><select id="newEmpDept"></select></div>
               <div class="field" style="margin:0;"><label>Designation</label><input type="text" id="newEmpDesig"></div>
-              <div class="field" style="margin:0;"><label>Email</label><input type="email" id="newEmpEmail"></div>
-              <div class="field" style="margin:0;"><label>Phone</label><input type="text" id="newEmpPhone"></div>
+              <div class="field" style="margin:0;"><label>Phone (optional)</label><input type="text" id="newEmpPhone"></div>
+              <div class="field" style="margin:0;"><label>Role</label><select id="newEmpRole"><option>Employee</option><option>HOD</option><option>SuperAdmin</option></select></div>
             </div>
-            <button class="btn btn-primary" onclick="addEmployee()">+ Add Employee</button>
+            <hr style="border:none;border-top:1px solid var(--border);margin:16px 0;">
+            <p class="text-muted" style="font-size:12.5px;margin-bottom:12px;">Portal login (optional — leave blank to add the record only, and create their login later):</p>
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:14px;">
+              <div class="field" style="margin:0;"><label>Login Email</label><input type="email" id="newEmpEmail"></div>
+              <div class="field" style="margin:0;"><label>Password</label><input type="password" id="newEmpPassword" placeholder="Min. 6 characters"></div>
+              <div class="field" style="margin:0;"><label>Username</label><input type="text" id="newEmpUsername" placeholder="Defaults to Employee ID"></div>
+            </div>
+            <button class="btn btn-primary" onclick="addEmployee()">+ Add Person</button>
           </div>
         </div>
 
         <div class="card">
           <div class="card-header">
-            <h3>Employee Directory</h3>
+            <h3>Directory</h3>
             <select id="empDeptFilter" style="width:auto;padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;" onchange="loadAllEmployees()"><option value="">All Departments</option></select>
           </div>
           <div class="card-body" style="padding:0;"><div id="allEmployeesWrap" class="table-wrap"><div class="empty-state">Loading…</div></div></div>
@@ -265,41 +271,6 @@
           </div>
         </div>
         <div class="card"><div class="card-header"><h3>Linked Machines</h3></div><div class="card-body" style="padding:0;"><div id="devicesTableWrap" class="table-wrap"><div class="empty-state">Loading…</div></div></div></div>
-      </div>
-
-      <div id="page-access" class="page">
-        <div class="section-title">Access Control</div>
-        <div class="section-sub">Create logins, assign roles, reset passwords, and reassign HOD access.</div>
-
-        <div class="card">
-          <div class="card-header"><h3>Create New Account</h3><p>Creates the login directly — no need to visit Supabase.</p></div>
-          <div class="card-body">
-            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;">
-              <div class="field" style="margin:0;"><label>Full Name</label><input type="text" id="newAccFullName"></div>
-              <div class="field" style="margin:0;"><label>Username</label><input type="text" id="newAccUsername" placeholder="e.g. m.ahmed"></div>
-              <div class="field" style="margin:0;"><label>Email</label><input type="email" id="newAccEmail"></div>
-              <div class="field" style="margin:0;"><label>Password</label><input type="password" id="newAccPassword" placeholder="Min. 6 characters"></div>
-              <div class="field" style="margin:0;"><label>Role</label><select id="newAccRole" onchange="toggleAccountFields()"><option>Employee</option><option>HOD</option><option>SuperAdmin</option></select></div>
-              <div class="field" style="margin:0;" id="newAccDeptWrap"><label>Department</label><select id="newAccDept"><option value="">— None —</option></select></div>
-              <div class="field" style="margin:0;" id="newAccEmpWrap"><label>Linked Employee</label><select id="newAccEmpId"><option value="">— None —</option></select></div>
-            </div>
-            <button class="btn btn-primary" onclick="createAccount()">+ Create Account</button>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="card-header"><h3>Reassign HOD</h3><p>Promoting a new HOD automatically retires the outgoing one.</p></div>
-          <div class="card-body" style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;">
-            <div class="field" style="margin:0;flex:1;min-width:180px;"><label>Department</label><select id="reassignDept"></select></div>
-            <div class="field" style="margin:0;flex:1;min-width:180px;"><label>New HOD</label><select id="reassignUsername"></select></div>
-            <button class="btn btn-primary" onclick="reassignHod()">Reassign</button>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="card-header"><h3>All User Accounts</h3><p>Assign role, department, employee link, or reset password.</p></div>
-          <div class="card-body" style="padding:0;"><div id="profilesTableWrap" class="table-wrap"><div class="empty-state">Loading…</div></div></div>
-        </div>
       </div>
 
       <div id="page-calendar" class="page">
@@ -325,7 +296,7 @@
         <div class="section-sub">SuperAdmin oversight for leave and correction requests.</div>
         <div class="sub-tabs">
           <div class="sub-tab active" onclick="setApprTab('leaves', event)">Leave Requests</div>
-          <div class="sub-tab" onclick="setApprTab('corrections', event)">Punch Corrections</div>
+          <div class="sub-tab" onclick="setApprTab('corrections', event)">Entry Corrections</div>
         </div>
 
         <div id="apprTab-leaves">
@@ -391,29 +362,38 @@
 
 <div id="empSettingsModal" class="modal-overlay">
   <div class="modal-box">
-    <div class="modal-header"><h3>Employee Settings</h3><button class="modal-close" onclick="closeModal('empSettingsModal')">×</button></div>
+    <div class="modal-header"><h3>Manage Person</h3><button class="modal-close" onclick="closeModal('empSettingsModal')">×</button></div>
     <div class="modal-body">
       <p style="font-weight:600;color:var(--navy);margin-bottom:14px;" id="empSettingsName"></p>
-      <div class="field"><label>Department</label><select id="empDeptSelect"></select></div>
-      <div class="field"><label>Shift Override</label><select id="empShiftSelect"></select></div>
-      <div class="field"><label>Off Days</label><div id="offDayChecks"></div></div>
-    </div>
-    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('empSettingsModal')">Cancel</button><button class="btn btn-primary" onclick="saveEmpSettings()">Save</button></div>
-  </div>
-</div>
 
-<div id="roleModal" class="modal-overlay">
-  <div class="modal-box">
-    <div class="modal-header"><h3>Edit User Access</h3><button class="modal-close" onclick="closeModal('roleModal')">×</button></div>
-    <div class="modal-body">
-      <p style="font-weight:600;color:var(--navy);margin-bottom:14px;" id="roleUsername"></p>
-      <div class="field"><label>Role</label><select id="roleSelect"><option>Employee</option><option>HOD</option><option>SuperAdmin</option></select></div>
-      <div class="field"><label>Department</label><select id="roleDeptSelect"><option value="">— None —</option></select></div>
-      <div class="field"><label>Linked Employee</label><select id="roleEmpSelect"><option value="">— None —</option></select></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+        <div class="field"><label>Department</label><select id="empDeptSelect"></select></div>
+        <div class="field"><label>Shift Override</label><select id="empShiftSelect"></select></div>
+      </div>
+      <div class="field"><label>Off Days</label><div id="offDayChecks"></div></div>
+
       <hr style="border:none;border-top:1px solid var(--border);margin:18px 0;">
-      <div class="field"><label>Reset Password</label><input type="password" id="roleNewPassword" placeholder="Leave blank to keep current password"></div>
+      <p class="text-muted" style="font-size:12px;margin-bottom:10px;">Portal Access</p>
+
+      <div id="hasLoginSection" style="display:none;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+          <div class="field"><label>Role</label><select id="empRoleSelect"><option>Employee</option><option>HOD</option><option>SuperAdmin</option></select></div>
+          <div class="field"><label>Reset Password</label><input type="password" id="empResetPassword" placeholder="Leave blank to keep current"></div>
+        </div>
+        <button class="btn btn-danger btn-sm" onclick="deleteAccountFromModal()">Delete Login Account</button>
+      </div>
+
+      <div id="noLoginSection" style="display:none;">
+        <p class="text-muted" style="font-size:12.5px;margin-bottom:12px;">This person has no portal login yet.</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+          <div class="field"><label>Email</label><input type="email" id="empNewEmail"></div>
+          <div class="field"><label>Password</label><input type="password" id="empNewPassword" placeholder="Min. 6 characters"></div>
+          <div class="field"><label>Role</label><select id="empNewRole"><option>Employee</option><option>HOD</option><option>SuperAdmin</option></select></div>
+        </div>
+        <button class="btn btn-info btn-sm" onclick="createLoginFromModal()">+ Create Login for This Person</button>
+      </div>
     </div>
-    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('roleModal')">Cancel</button><button class="btn btn-primary" onclick="saveRole()">Save Changes</button></div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('empSettingsModal')">Cancel</button><button class="btn btn-primary" onclick="saveEmpSettings()">Save Changes</button></div>
   </div>
 </div>
 
@@ -463,7 +443,7 @@ function statusBadge(status) {
   if (s.includes('present')&&!s.includes('late')) cls='present';
   else if (s.includes('absent')) cls='absent'; else if (s.includes('late')) cls='late';
   else if (s.includes('half')) cls='half'; else if (s.includes('holiday')) cls='holiday'; else if (s.includes('offday')) cls='offday';
-  return `<span class="badge badge-${cls}">${status}</span>`;
+  return `<span class="badge badge-${cls}">${status.replace('Punch','Entry')}</span>`;
 }
 function openModal(id){document.getElementById(id).classList.add('open');}
 function closeModal(id){document.getElementById(id).classList.remove('open');}
@@ -504,10 +484,7 @@ async function loadReferenceData() {
   document.getElementById('newDeptShift').innerHTML = state.shifts.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
   document.getElementById('newEmpDept').innerHTML = deptOptions;
   document.getElementById('empDeptFilter').innerHTML += deptOptions;
-  document.getElementById('reassignDept').innerHTML = deptOptions;
-  document.getElementById('newAccDept').innerHTML += deptOptions;
   document.getElementById('rptDept').innerHTML += deptOptions;
-  document.getElementById('roleDeptSelect').innerHTML += deptOptions;
 }
 
 function navigate(pageId) {
@@ -515,7 +492,7 @@ function navigate(pageId) {
   document.querySelectorAll('.sidebar-nav .nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('page-' + pageId).classList.add('active');
   document.querySelectorAll('.sidebar-nav .nav-item').forEach(n => { if (n.getAttribute('onclick')?.includes(`'${pageId}'`)) n.classList.add('active'); });
-  const titles = { dashboard:'Dashboard', organization:'Organization', employees:'Employees', devices:'Machines', access:'Access Control', calendar:'Calendar', approvals:'Approvals', reports:'Reports', audit:'Audit Log' };
+  const titles = { dashboard:'Dashboard', organization:'Organization', employees:'Employees', devices:'Machines', calendar:'Calendar', approvals:'Approvals', reports:'Reports', audit:'Audit Log' };
   document.getElementById('topbarTitle').textContent = titles[pageId];
   document.getElementById('sidebar').classList.remove('open');
 
@@ -523,7 +500,6 @@ function navigate(pageId) {
   if (pageId === 'organization') { loadDepartments(); loadShifts(); }
   if (pageId === 'employees') loadAllEmployees();
   if (pageId === 'devices') loadDevices();
-  if (pageId === 'access') { loadProfiles(); populateEmployeePickers(); }
   if (pageId === 'calendar') loadCalendar();
   if (pageId === 'audit') loadAudit();
 }
@@ -670,48 +646,81 @@ async function addShift() {
 async function loadAllEmployees() {
   const deptFilter = document.getElementById('empDeptFilter').value;
   state.allEmployees = await DB.listEmployees(deptFilter || null);
+  state.allProfiles = await DB.listAllProfiles();
   const wrap = document.getElementById('allEmployeesWrap');
-  if (!state.allEmployees.length) { wrap.innerHTML = '<div class="empty-state">No employees found.</div>'; return; }
-  const rows = state.allEmployees.map(e => `<tr>
+  if (!state.allEmployees.length) { wrap.innerHTML = '<div class="empty-state">No one added yet.</div>'; return; }
+
+  const roleCls = { SuperAdmin:'role-super', HOD:'role-hod', Employee:'role-emp' };
+  const rows = state.allEmployees.map(e => {
+    const profile = state.allProfiles.find(p => p.emp_id === e.emp_id);
+    const roleBadge = profile ? `<span class="badge badge-${roleCls[profile.role]}">${profile.role}</span>` : '<span class="badge badge-inactive">No Login</span>';
+    return `<tr>
     <td><strong>${e.emp_id}</strong></td><td>${e.name}</td><td>${e.departments?.name || '—'}</td>
-    <td>${e.designation || '—'}</td><td class="text-muted">${e.email || '—'}</td>
+    <td>${e.designation || '—'}</td><td>${roleBadge}</td>
     <td>${e.shifts?.name || '<span class="text-muted">Dept default</span>'}</td>
-    <td><button class="btn btn-ghost btn-sm" onclick="openEmpSettings('${e.emp_id}')">⚙</button> <button class="btn btn-danger btn-sm" onclick="removeEmployee('${e.emp_id}')">✕</button></td>
-  </tr>`).join('');
-  wrap.innerHTML = `<table><thead><tr><th>ID</th><th>Name</th><th>Department</th><th>Designation</th><th>Email</th><th>Shift</th><th>Actions</th></tr></thead><tbody>${rows}</tbody></table>`;
+    <td><button class="btn btn-ghost btn-sm" onclick="openEmpSettings('${e.emp_id}')">⚙ Manage</button> <button class="btn btn-danger btn-sm" onclick="removeEmployee('${e.emp_id}')">✕</button></td>
+  </tr>`;
+  }).join('');
+  wrap.innerHTML = `<table><thead><tr><th>ID</th><th>Name</th><th>Department</th><th>Designation</th><th>Access</th><th>Shift</th><th>Actions</th></tr></thead><tbody>${rows}</tbody></table>`;
 }
 
 async function addEmployee() {
-  const emp = {
+  const payload = {
     emp_id: document.getElementById('newEmpId').value.trim(),
     name: document.getElementById('newEmpName').value.trim(),
     department_id: document.getElementById('newEmpDept').value,
     designation: document.getElementById('newEmpDesig').value.trim(),
+    phone: document.getElementById('newEmpPhone').value.trim(),
+    role: document.getElementById('newEmpRole').value,
     email: document.getElementById('newEmpEmail').value.trim(),
-    phone: document.getElementById('newEmpPhone').value.trim()
+    password: document.getElementById('newEmpPassword').value,
+    username: document.getElementById('newEmpUsername').value.trim()
   };
-  if (!emp.emp_id || !emp.name) return toast('Employee ID and Name required.', 'error');
-  const res = await DB.addEmployee(emp);
-  if (res.success) { toast('Employee added.', 'success'); ['newEmpId','newEmpName','newEmpDesig','newEmpEmail','newEmpPhone'].forEach(id=>document.getElementById(id).value=''); loadAllEmployees(); }
-  else toast(res.message, 'error');
+  if (!payload.emp_id || !payload.name || !payload.department_id) return toast('Employee ID, Name, and Department are required.', 'error');
+  if (payload.email && !payload.password) return toast('Enter a password to go with that login email.', 'error');
+
+  toast('Adding person…', 'info');
+  const res = await DB.createEmployeeAccount(payload);
+  if (res.success) {
+    toast(res.message, 'success');
+    ['newEmpId','newEmpName','newEmpDesig','newEmpPhone','newEmpEmail','newEmpPassword','newEmpUsername'].forEach(id => document.getElementById(id).value = '');
+    loadAllEmployees();
+  } else toast(res.message, 'error');
 }
 
 async function removeEmployee(empId) {
-  if (!confirm('Delete this employee? Attendance history is preserved.')) return;
+  if (!confirm('Delete this person\'s record? Attendance history is preserved. Their login (if any) stays active — delete that separately from Manage if needed.')) return;
   const res = await DB.deleteEmployee(empId);
-  toast(res.success ? 'Employee deleted.' : res.message, res.success?'success':'error');
+  toast(res.success ? 'Record deleted.' : res.message, res.success?'success':'error');
   if (res.success) loadAllEmployees();
 }
 
 async function openEmpSettings(empId) {
   const emp = state.allEmployees.find(e => e.emp_id === empId);
+  const profile = state.allProfiles.find(p => p.emp_id === empId);
   state.empSettingsTarget = empId;
+  state.empSettingsProfile = profile || null;
+
   document.getElementById('empSettingsName').textContent = emp.name + ' (' + emp.emp_id + ')';
   document.getElementById('empDeptSelect').innerHTML = state.departments.map(d => `<option value="${d.id}" ${d.id===emp.department_id?'selected':''}>${d.name}</option>`).join('');
   document.getElementById('empShiftSelect').innerHTML = '<option value="">— Department Default —</option>' + state.shifts.map(s => `<option value="${s.id}" ${s.id===emp.shift_id?'selected':''}>${s.name}</option>`).join('');
+
   const offDays = await DB.getEmployeeOffDays(empId);
   const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   document.getElementById('offDayChecks').innerHTML = dayNames.map((n,i)=>`<label class="off-day-check"><input type="checkbox" value="${i}" ${offDays.includes(i)?'checked':''}> ${n}</label>`).join('');
+
+  if (profile) {
+    document.getElementById('hasLoginSection').style.display = 'block';
+    document.getElementById('noLoginSection').style.display = 'none';
+    document.getElementById('empRoleSelect').value = profile.role;
+    document.getElementById('empResetPassword').value = '';
+  } else {
+    document.getElementById('hasLoginSection').style.display = 'none';
+    document.getElementById('noLoginSection').style.display = 'block';
+    document.getElementById('empNewEmail').value = emp.email || '';
+    document.getElementById('empNewPassword').value = '';
+  }
+
   openModal('empSettingsModal');
 }
 
@@ -722,9 +731,42 @@ async function saveEmpSettings() {
   const checkedDays = Array.from(document.querySelectorAll('#offDayChecks input:checked')).map(c=>parseInt(c.value));
   await DB.updateEmployee(empId, { department_id: deptId, shift_id: shiftId });
   await DB.setEmployeeOffDays(empId, checkedDays);
-  toast('Employee updated.', 'success');
+
+  if (state.empSettingsProfile) {
+    const role = document.getElementById('empRoleSelect').value;
+    const newPassword = document.getElementById('empResetPassword').value;
+    await DB.setUserRole(state.empSettingsProfile.username, role, deptId, empId);
+    if (newPassword) {
+      if (newPassword.length < 6) { toast('Password must be at least 6 characters — other changes were saved.', 'error'); }
+      else await DB.resetUserPassword(state.empSettingsProfile.id, newPassword);
+    }
+  }
+
+  toast('Saved.', 'success');
   closeModal('empSettingsModal');
   loadAllEmployees();
+}
+
+async function createLoginFromModal() {
+  const empId = state.empSettingsTarget;
+  const emp = state.allEmployees.find(e => e.emp_id === empId);
+  const email = document.getElementById('empNewEmail').value.trim();
+  const password = document.getElementById('empNewPassword').value;
+  const role = document.getElementById('empNewRole').value;
+  if (!email || !password) return toast('Email and password are required.', 'error');
+
+  toast('Creating login…', 'info');
+  const res = await DB.createUserAccount({ email, password, username: empId, role, department_id: emp.department_id, emp_id: empId, full_name: emp.name });
+  if (res.success) { toast('Login created.', 'success'); closeModal('empSettingsModal'); loadAllEmployees(); }
+  else toast(res.message, 'error');
+}
+
+async function deleteAccountFromModal() {
+  if (!state.empSettingsProfile) return;
+  if (!confirm(`Delete the login for ${state.empSettingsProfile.username}? Their email will become available to reuse. The employee record itself stays.`)) return;
+  const res = await DB.deleteUserAccount(state.empSettingsProfile.id);
+  toast(res.success ? res.message : res.message, res.success ? 'success' : 'error');
+  if (res.success) { closeModal('empSettingsModal'); loadAllEmployees(); }
 }
 
 async function loadDevices() {
@@ -751,103 +793,10 @@ async function addDevice() {
 async function toggleDevice(id, active) { const res = await DB.toggleDevice(id, active); toast(res.success?'Updated.':res.message, res.success?'success':'error'); if(res.success) loadDevices(); }
 async function removeDevice(id) { if(!confirm('Unlink this machine?')) return; const res = await DB.removeDevice(id); toast(res.success?'Machine unlinked.':res.message, res.success?'success':'error'); if(res.success) loadDevices(); }
 
-async function loadProfiles() {
-  const profiles = await DB.listAllProfiles();
-  const wrap = document.getElementById('profilesTableWrap');
-  if (!profiles.length) { wrap.innerHTML = '<div class="empty-state">No user accounts found.</div>'; return; }
-  const roleCls = { SuperAdmin:'role-super', HOD:'role-hod', Employee:'role-emp' };
-  const rows = profiles.map(p => `<tr>
-    <td><strong>${p.username}</strong></td><td>${p.full_name||'—'}</td>
-    <td><span class="badge badge-${roleCls[p.role]}">${p.role}</span></td>
-    <td>${p.departments?.name||'—'}</td><td class="text-mono">${p.emp_id||'—'}</td>
-    <td><button class="btn btn-ghost btn-sm" onclick='openRoleModal(${JSON.stringify(p).replace(/'/g,"&#39;")})'>Edit / Reset Password</button></td>
-  </tr>`).join('');
-  wrap.innerHTML = `<table><thead><tr><th>Username</th><th>Full Name</th><th>Role</th><th>Department</th><th>Emp ID</th><th>Actions</th></tr></thead><tbody>${rows}</tbody></table>`;
-
-  // Populate the "New HOD" selector with real usernames (searchable via native select typing)
-  document.getElementById('reassignUsername').innerHTML = '<option value="">— Choose user —</option>' +
-    profiles.map(p => `<option value="${p.username}">${p.username} (${p.full_name||''})</option>`).join('');
-}
-
-function toggleAccountFields() {
-  const role = document.getElementById('newAccRole').value;
-  document.getElementById('newAccDeptWrap').style.display = (role === 'HOD') ? 'block' : (role === 'Employee' ? 'block' : 'none');
-  document.getElementById('newAccEmpWrap').style.display = (role === 'Employee') ? 'block' : 'none';
-}
-
-async function populateEmployeePickers() {
-  const allEmp = await DB.listEmployees();
-  const options = '<option value="">— None —</option>' + allEmp.map(e => `<option value="${e.emp_id}">${e.emp_id} — ${e.name}</option>`).join('');
-  document.getElementById('newAccEmpId').innerHTML = options;
-  document.getElementById('roleEmpSelect').innerHTML = options;
-}
-
 async function populateReportEmployeePicker() {
   const allEmp = await DB.listEmployees();
   document.getElementById('rptEmpId').innerHTML = '<option value="">— All Employees —</option>' +
     allEmp.map(e => `<option value="${e.emp_id}">${e.emp_id} — ${e.name} (${e.departments?.name||''})</option>`).join('');
-}
-
-async function createAccount() {
-  const payload = {
-    full_name: document.getElementById('newAccFullName').value.trim(),
-    username: document.getElementById('newAccUsername').value.trim(),
-    email: document.getElementById('newAccEmail').value.trim(),
-    password: document.getElementById('newAccPassword').value,
-    role: document.getElementById('newAccRole').value,
-    department_id: document.getElementById('newAccDept').value || null,
-    emp_id: document.getElementById('newAccEmpId').value || null
-  };
-  if (!payload.username || !payload.email || !payload.password) return toast('Username, email, and password are required.', 'error');
-
-  toast('Creating account…', 'info');
-  const res = await DB.createUserAccount(payload);
-  if (res.success) {
-    toast('Account created successfully.', 'success');
-    ['newAccFullName','newAccUsername','newAccEmail','newAccPassword'].forEach(id => document.getElementById(id).value = '');
-    loadProfiles();
-  } else toast(res.message, 'error');
-}
-
-function openRoleModal(profile) {
-  document.getElementById('roleUsername').textContent = profile.username;
-  document.getElementById('roleSelect').value = profile.role;
-  document.getElementById('roleDeptSelect').value = profile.department_id || '';
-  document.getElementById('roleEmpSelect').value = profile.emp_id || '';
-  document.getElementById('roleNewPassword').value = '';
-  state.roleTarget = profile.username;
-  state.roleTargetId = profile.id;
-  openModal('roleModal');
-}
-
-async function saveRole() {
-  const role = document.getElementById('roleSelect').value;
-  const deptId = document.getElementById('roleDeptSelect').value || null;
-  const empId = document.getElementById('roleEmpSelect').value || null;
-  const newPassword = document.getElementById('roleNewPassword').value;
-
-  const res = await DB.setUserRole(state.roleTarget, role, deptId, empId);
-  if (!res.success) return toast(res.message, 'error');
-
-  if (newPassword) {
-    if (newPassword.length < 6) return toast('New password must be at least 6 characters.', 'error');
-    const pwRes = await DB.resetUserPassword(state.roleTargetId, newPassword);
-    if (!pwRes.success) return toast('Access updated, but password reset failed: ' + pwRes.message, 'error');
-    toast('Access updated and password reset.', 'success');
-  } else {
-    toast('Access updated.', 'success');
-  }
-  closeModal('roleModal');
-  loadProfiles();
-}
-
-async function reassignHod() {
-  const deptId = document.getElementById('reassignDept').value;
-  const username = document.getElementById('reassignUsername').value;
-  if (!username) return toast('Choose the new HOD.', 'error');
-  const res = await DB.reassignHod(deptId, username);
-  toast(res.success ? 'HOD reassigned successfully.' : res.message, res.success?'success':'error');
-  if (res.success) loadProfiles();
 }
 
 async function loadCalendar() {
@@ -1035,16 +984,24 @@ async function renderIndividualReport(r, start, end) {
           </div>
           <button class="btn btn-primary btn-sm" onclick="openAddManualEntry('${r.emp_id}')">+ Add Manual Entry</button>
         </div>
-        <div class="summary-bar">
-          <div class="summary-chip">📅 Work Days: <span>${r.working_days}</span></div>
-          <div class="summary-chip">🎯 Required: <span>${hrs(r.required_hours)}</span></div>
-          <div class="summary-chip">✅ Spent: <span>${hrs(r.spent_hours)}</span></div>
-          <div class="summary-chip">⏳ Remaining: <span>${hrs(r.remaining_hours)}</span></div>
-          <div class="summary-chip">🔥 Overtime: <span style="color:var(--warning)">${hrs(r.overtime_hours)}</span></div>
-          <div class="summary-chip">❌ Absent: <span style="color:${r.absent_days>0?'var(--danger)':'var(--success)'}">${r.absent_days}</span></div>
-          <div class="summary-chip">⏰ Late: <span>${r.late_days}</span></div>
-          <div class="summary-chip">📊 Attendance: <span style="color:${r.attendance_pct>=80?'var(--success)':'var(--danger)'};font-size:15px;">${r.attendance_pct}%</span></div>
-          <div class="summary-chip">🏖 Leave (C/E/O/U): <span>${r.leave_casual}/${r.leave_earned}/${r.leave_official}/${r.leave_unpaid}</span></div>
+                <div class="table-wrap" style="margin-bottom:16px;">
+          <table style="text-align:center;">
+            <thead><tr>
+              <th>Work Days</th><th>Required</th><th>Spent</th><th>Remaining</th><th>Overtime</th>
+              <th>Absent</th><th>Late</th><th>Attendance %</th><th>Leave (C/E/O/U)</th>
+            </tr></thead>
+            <tbody><tr>
+              <td><strong>${r.working_days}</strong></td>
+              <td>${hrs(r.required_hours)}</td>
+              <td>${hrs(r.spent_hours)}</td>
+              <td>${hrs(r.remaining_hours)}</td>
+              <td style="color:var(--warning);font-weight:700;">${hrs(r.overtime_hours)}</td>
+              <td style="color:${r.absent_days>0?'var(--danger)':'var(--success)'};font-weight:700;">${r.absent_days}</td>
+              <td>${r.late_days}</td>
+              <td style="color:${r.attendance_pct>=80?'var(--success)':'var(--danger)'};font-weight:700;">${r.attendance_pct}%</td>
+              <td>${r.leave_casual}/${r.leave_earned}/${r.leave_official}/${r.leave_unpaid}</td>
+            </tr></tbody>
+          </table>
         </div>
         <div class="table-wrap"><table>
           <thead><tr><th>Date</th><th>Check-In</th><th>Check-Out</th><th>Status</th><th>Hours</th><th>Overtime</th><th>Action</th></tr></thead>
