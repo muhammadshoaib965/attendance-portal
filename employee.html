@@ -438,7 +438,10 @@ async function loadMyAttendance() {
   const report = await DB.getEmployeeReport(state.empId, start, end);
   const records = await DB.getAttendance(state.empId, start, end);
 
-  if (report) {
+  if (report && report._error) {
+    toast('Could not load summary: ' + report._error, 'error');
+    document.getElementById('attSummaryBar').innerHTML = '';
+  } else if (report) {
     document.getElementById('attSummaryBar').innerHTML = `
       <div class="table-wrap" style="margin-bottom:18px;">
         <table style="text-align:center;">

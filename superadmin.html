@@ -921,13 +921,14 @@ async function generateReport() {
   let report;
   if (empId) {
     const r = await DB.getEmployeeReport(empId, start, end);
-    report = r ? [r] : [];
+    if (r && r._error) { toast('Report error: ' + r._error, 'error'); report = []; }
+    else report = r ? [r] : [];
   } else if (deptId) {
     report = await DB.getDepartmentReport(deptId, start, end);
   } else {
     const allEmp = await DB.listEmployees();
     report = [];
-    for (const e of allEmp) { const r = await DB.getEmployeeReport(e.emp_id, start, end); if (r) report.push(r); }
+    for (const e of allEmp) { const r = await DB.getEmployeeReport(e.emp_id, start, end); if (r && !r._error) report.push(r); }
   }
   state.lastReport = report;
   state.lastReportRange = { start, end };
@@ -1056,7 +1057,7 @@ async function saveAttEdit() {
   const fields = computeStatusAndHours(inT, outT);
   const res = await DB.updateAttendanceRecord(empId, date, fields);
   toast(res.success ? 'Record saved.' : res.message, res.success ? 'success' : 'error');
-  if (res.success) { closeModal('editAttModal'); const range = state.lastReportRange; const r = await DB.getEmployeeReport(empId, range.start, range.end); if (r) await renderIndividualReport(r, range.start, range.end); }
+  if (res.success) { closeModal('editAttModal'); const range = state.lastReportRange; const r = await DB.getEmployeeReport(empId, range.start, range.end); if (r && !r._error) await renderIndividualReport(r, range.start, range.end); }
 }
 
 function exportReport() {

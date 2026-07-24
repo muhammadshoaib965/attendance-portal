@@ -243,7 +243,8 @@ const _DB_impl = {
     const { data, error } = await supabaseClient.rpc('get_employee_report', {
       p_emp_id: empId, p_start: startDate, p_end: endDate
     });
-    return error ? null : (data && data[0] ? data[0] : null);
+    if (error) { console.error('get_employee_report failed:', error.message, error); return { _error: error.message }; }
+    return (data && data[0]) ? data[0] : { _error: 'No data returned — check that the employee ID exists and the date range is valid.' };
   },
 
   // Whole-department report — runs the function once per employee
@@ -252,7 +253,7 @@ const _DB_impl = {
     const results = [];
     for (const emp of employees) {
       const r = await this.getEmployeeReport(emp.emp_id, startDate, endDate);
-      if (r) results.push(r);
+      if (r && !r._error) results.push(r);
     }
     return results;
   },

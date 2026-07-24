@@ -625,7 +625,8 @@ async function generateReport() {
   let report;
   if (empId) {
     const r = await DB.getEmployeeReport(empId, start, end);
-    report = r ? [r] : [];
+    if (r && r._error) { toast('Report error: ' + r._error, 'error'); report = []; }
+    else report = r ? [r] : [];
   } else {
     report = await DB.getDepartmentReport(state.deptId, start, end);
   }
@@ -757,7 +758,7 @@ async function saveAttEdit() {
 
   const res = await DB.updateAttendanceRecord(empId, date, fields);
   toast(res.success ? 'Record saved.' : res.message, res.success ? 'success' : 'error');
-  if (res.success) { closeModal('editAttModal'); const range = state.lastReportRange; const r = await DB.getEmployeeReport(empId, range.start, range.end); if (r) await renderIndividualReport(r, range.start, range.end); }
+  if (res.success) { closeModal('editAttModal'); const range = state.lastReportRange; const r = await DB.getEmployeeReport(empId, range.start, range.end); if (r && !r._error) await renderIndividualReport(r, range.start, range.end); }
 }
 
 function exportReport() {
