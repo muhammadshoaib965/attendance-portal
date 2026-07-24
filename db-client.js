@@ -121,6 +121,11 @@ const _DB_impl = {
     return error ? { success: false, message: error.message } : { success: true };
   },
 
+  async deleteShift(id) {
+    const { error } = await supabaseClient.from('shifts').delete().eq('id', id);
+    return error ? { success: false, message: error.message } : { success: true };
+  },
+
   // ============================================================
   // EMPLOYEES
   // ============================================================
@@ -133,7 +138,8 @@ const _DB_impl = {
 
   async addEmployee(emp) {
     // emp = { emp_id, name, department_id, email, phone, designation, shift_id }
-    const { data, error } = await supabaseClient.from('employees').insert(emp).select().single();
+    const cleaned = { ...emp, phone: emp.phone?.trim() || null, email: emp.email?.trim() || null, designation: emp.designation?.trim() || null };
+    const { data, error } = await supabaseClient.from('employees').insert(cleaned).select().single();
     return error ? { success: false, message: error.message } : { success: true, data };
   },
 
@@ -399,6 +405,39 @@ const _DB_impl = {
   async listAllProfiles() {
     const { data, error } = await supabaseClient.from('profiles').select('*, departments(name)').order('username');
     return error ? [] : data;
+  },
+
+  // ============================================================
+  // ACCOUNT MANAGEMENT  (SuperAdmin only — via secure backend endpoints)
+  // ============================================================
+  async getAccessToken() {
+    const { data } = await supabaseClient.auth.getSession();
+    return data.session?.access_token;
+  },
+
+  async createUserAccount(payload) {
+    const token = await this.getAccessToken();
+    const res = await fetch('/api/admin/create-user', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify(payload)
+    });
+    return res.json();
+  },
+
+  async resetUserPassword(targetUserId, newPassword) {
+    const token = await this.getAccessToken();
+    const res = await fetch('/api/admin/reset-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ targetUserId, newPassword })
+    });
+    return res.json();
+  },
+
+  async cleanupOldAuditLogs() {
+    const { error } = await supabaseClient.rpc('cleanup_old_audit_logs');
+    return error ? { success: false, message: error.message } : { success: true };
   },
 };
 

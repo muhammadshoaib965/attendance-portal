@@ -9,6 +9,7 @@
 <script src="db-client.js?v=3"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
@@ -206,7 +207,7 @@
 
         <div id="orgTab-shifts" style="display:none;">
           <div class="card">
-            <div class="card-header"><h3>Add Shift Template</h3></div>
+            <div class="card-header"><h3 id="shiftFormTitle">Add Shift Template</h3></div>
             <div class="card-body">
               <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;">
                 <div class="field" style="margin:0;"><label>Shift Name</label><input type="text" id="newShiftName" placeholder="e.g. Evening Shift"></div>
@@ -215,7 +216,8 @@
                 <div class="field" style="margin:0;"><label>Grace (mins)</label><input type="number" id="newShiftGrace" value="15"></div>
                 <div class="field" style="margin:0;"><label>Target Hours</label><input type="number" id="newShiftTarget" value="8" step="0.5"></div>
               </div>
-              <button class="btn btn-primary" onclick="addShift()">+ Add Shift</button>
+              <button class="btn btn-primary" id="shiftSubmitBtn" onclick="addShift()">+ Add Shift</button>
+              <button class="btn btn-ghost" id="shiftCancelBtn" onclick="cancelEditShift()" style="display:none;">Cancel Edit</button>
             </div>
           </div>
           <div class="card"><div class="card-header"><h3>All Shifts</h3></div><div class="card-body" style="padding:0;"><div id="shiftsTableWrap" class="table-wrap"><div class="empty-state">Loading…</div></div></div></div>
@@ -267,19 +269,35 @@
 
       <div id="page-access" class="page">
         <div class="section-title">Access Control</div>
-        <div class="section-sub">Assign roles and reassign HOD access when tenure changes.</div>
+        <div class="section-sub">Create logins, assign roles, reset passwords, and reassign HOD access.</div>
+
+        <div class="card">
+          <div class="card-header"><h3>Create New Account</h3><p>Creates the login directly — no need to visit Supabase.</p></div>
+          <div class="card-body">
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;">
+              <div class="field" style="margin:0;"><label>Full Name</label><input type="text" id="newAccFullName"></div>
+              <div class="field" style="margin:0;"><label>Username</label><input type="text" id="newAccUsername" placeholder="e.g. m.ahmed"></div>
+              <div class="field" style="margin:0;"><label>Email</label><input type="email" id="newAccEmail"></div>
+              <div class="field" style="margin:0;"><label>Password</label><input type="password" id="newAccPassword" placeholder="Min. 6 characters"></div>
+              <div class="field" style="margin:0;"><label>Role</label><select id="newAccRole" onchange="toggleAccountFields()"><option>Employee</option><option>HOD</option><option>SuperAdmin</option></select></div>
+              <div class="field" style="margin:0;" id="newAccDeptWrap"><label>Department</label><select id="newAccDept"><option value="">— None —</option></select></div>
+              <div class="field" style="margin:0;" id="newAccEmpWrap"><label>Linked Employee</label><select id="newAccEmpId"><option value="">— None —</option></select></div>
+            </div>
+            <button class="btn btn-primary" onclick="createAccount()">+ Create Account</button>
+          </div>
+        </div>
 
         <div class="card">
           <div class="card-header"><h3>Reassign HOD</h3><p>Promoting a new HOD automatically retires the outgoing one.</p></div>
           <div class="card-body" style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;">
             <div class="field" style="margin:0;flex:1;min-width:180px;"><label>Department</label><select id="reassignDept"></select></div>
-            <div class="field" style="margin:0;flex:1;min-width:180px;"><label>New HOD Username</label><input type="text" id="reassignUsername" placeholder="e.g. m.ahmed"></div>
+            <div class="field" style="margin:0;flex:1;min-width:180px;"><label>New HOD</label><select id="reassignUsername"></select></div>
             <button class="btn btn-primary" onclick="reassignHod()">Reassign</button>
           </div>
         </div>
 
         <div class="card">
-          <div class="card-header"><h3>All User Accounts</h3><p>Assign role, department, or linked employee ID for each login.</p></div>
+          <div class="card-header"><h3>All User Accounts</h3><p>Assign role, department, employee link, or reset password.</p></div>
           <div class="card-body" style="padding:0;"><div id="profilesTableWrap" class="table-wrap"><div class="empty-state">Loading…</div></div></div>
         </div>
       </div>
@@ -338,9 +356,10 @@
             <div class="field" style="margin:0;flex:1;min-width:150px;"><label>Department</label><select id="rptDept"><option value="">All Departments</option></select></div>
             <div class="field" style="margin:0;flex:1;min-width:140px;"><label>Start Date</label><input type="date" id="rptStart"></div>
             <div class="field" style="margin:0;flex:1;min-width:140px;"><label>End Date</label><input type="date" id="rptEnd"></div>
-            <div class="field" style="margin:0;flex:1;min-width:140px;"><label>Employee (optional)</label><input type="text" id="rptEmpId"></div>
+            <div class="field" style="margin:0;flex:1;min-width:180px;"><label>Employee (optional)</label><select id="rptEmpId"><option value="">— All Employees —</option></select></div>
             <button class="btn btn-primary" onclick="generateReport()">Generate</button>
-            <button class="btn btn-success" onclick="exportReport()">⬇ Export</button>
+            <button class="btn btn-success" onclick="exportReport()">⬇ Export Excel</button>
+            <button class="btn btn-info" onclick="exportReportPDF()">⬇ Export PDF</button>
           </div>
         </div>
         <div id="reportTableWrap"></div>
@@ -390,9 +409,11 @@
       <p style="font-weight:600;color:var(--navy);margin-bottom:14px;" id="roleUsername"></p>
       <div class="field"><label>Role</label><select id="roleSelect"><option>Employee</option><option>HOD</option><option>SuperAdmin</option></select></div>
       <div class="field"><label>Department</label><select id="roleDeptSelect"><option value="">— None —</option></select></div>
-      <div class="field"><label>Linked Employee ID (for Employee role)</label><input type="text" id="roleEmpId"></div>
+      <div class="field"><label>Linked Employee</label><select id="roleEmpSelect"><option value="">— None —</option></select></div>
+      <hr style="border:none;border-top:1px solid var(--border);margin:18px 0;">
+      <div class="field"><label>Reset Password</label><input type="password" id="roleNewPassword" placeholder="Leave blank to keep current password"></div>
     </div>
-    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('roleModal')">Cancel</button><button class="btn btn-primary" onclick="saveRole()">Save</button></div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('roleModal')">Cancel</button><button class="btn btn-primary" onclick="saveRole()">Save Changes</button></div>
   </div>
 </div>
 
@@ -404,6 +425,22 @@
       <div class="field"><label>Confirm New Password</label><input type="password" id="confirmPw"></div>
     </div>
     <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('pwModal')">Cancel</button><button class="btn btn-primary" onclick="savePassword()">Update</button></div>
+  </div>
+</div>
+
+<div id="editAttModal" class="modal-overlay">
+  <div class="modal-box">
+    <div class="modal-header"><h3>Edit / Add Attendance Record</h3><button class="modal-close" onclick="closeModal('editAttModal')">×</button></div>
+    <div class="modal-body">
+      <p id="editAttLabel" style="color:var(--muted);font-size:13px;margin-bottom:16px;"></p>
+      <input type="hidden" id="editEmpId"><input type="hidden" id="editDate">
+      <div class="field"><label>Check-In</label><input type="time" id="editIn"></div>
+      <div class="field"><label>Check-Out</label><input type="time" id="editOut"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('editAttModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveAttEdit()">Save</button>
+    </div>
   </div>
 </div>
 
@@ -468,6 +505,7 @@ async function loadReferenceData() {
   document.getElementById('newEmpDept').innerHTML = deptOptions;
   document.getElementById('empDeptFilter').innerHTML += deptOptions;
   document.getElementById('reassignDept').innerHTML = deptOptions;
+  document.getElementById('newAccDept').innerHTML += deptOptions;
   document.getElementById('rptDept').innerHTML += deptOptions;
   document.getElementById('roleDeptSelect').innerHTML += deptOptions;
 }
@@ -481,10 +519,11 @@ function navigate(pageId) {
   document.getElementById('topbarTitle').textContent = titles[pageId];
   document.getElementById('sidebar').classList.remove('open');
 
+  if (pageId === 'reports') populateReportEmployeePicker();
   if (pageId === 'organization') { loadDepartments(); loadShifts(); }
   if (pageId === 'employees') loadAllEmployees();
   if (pageId === 'devices') loadDevices();
-  if (pageId === 'access') loadProfiles();
+  if (pageId === 'access') { loadProfiles(); populateEmployeePickers(); }
   if (pageId === 'calendar') loadCalendar();
   if (pageId === 'audit') loadAudit();
 }
@@ -553,17 +592,56 @@ async function addDepartment() {
   const name = document.getElementById('newDeptName').value.trim();
   const shiftId = document.getElementById('newDeptShift').value;
   if (!name) return toast('Enter a department name.', 'error');
+
+  const duplicate = state.departments.find(d => d.name.trim().toLowerCase() === name.toLowerCase());
+  if (duplicate) return toast(`"${duplicate.name}" already exists — no need to add it again.`, 'error');
+
   const res = await DB.addDepartment(name, shiftId);
   if (res.success) { toast('Department added.', 'success'); document.getElementById('newDeptName').value=''; await loadReferenceData(); loadDepartments(); }
-  else toast(res.message, 'error');
+  else toast(res.message.includes('duplicate') ? 'A department with this name already exists.' : res.message, 'error');
 }
 
 async function loadShifts() {
   state.shifts = await DB.listShifts();
   const wrap = document.getElementById('shiftsTableWrap');
   if (!state.shifts.length) { wrap.innerHTML = '<div class="empty-state">No shifts yet.</div>'; return; }
-  const rows = state.shifts.map(s => `<tr><td><strong>${s.name}</strong></td><td>${s.start_time}</td><td>${s.end_time}</td><td>${s.grace_minutes} min</td><td>${s.target_hours}h</td></tr>`).join('');
-  wrap.innerHTML = `<table><thead><tr><th>Name</th><th>Start</th><th>End</th><th>Grace</th><th>Target</th></tr></thead><tbody>${rows}</tbody></table>`;
+  const rows = state.shifts.map(s => `<tr>
+    <td><strong>${s.name}</strong></td><td>${s.start_time}</td><td>${s.end_time}</td><td>${s.grace_minutes} min</td><td>${s.target_hours}h</td>
+    <td><button class="btn btn-ghost btn-sm" onclick='editShift(${JSON.stringify(s).replace(/'/g,"&#39;")})'>✎ Edit</button> <button class="btn btn-danger btn-sm" onclick="deleteShift(${s.id})">✕</button></td>
+  </tr>`).join('');
+  wrap.innerHTML = `<table><thead><tr><th>Name</th><th>Start</th><th>End</th><th>Grace</th><th>Target</th><th>Actions</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+function editShift(shift) {
+  state.editingShiftId = shift.id;
+  document.getElementById('newShiftName').value = shift.name;
+  document.getElementById('newShiftStart').value = shift.start_time;
+  document.getElementById('newShiftEnd').value = shift.end_time;
+  document.getElementById('newShiftGrace').value = shift.grace_minutes;
+  document.getElementById('newShiftTarget').value = shift.target_hours;
+  document.getElementById('shiftFormTitle').textContent = 'Edit Shift Template';
+  document.getElementById('shiftSubmitBtn').textContent = 'Update Shift';
+  document.getElementById('shiftCancelBtn').style.display = 'inline-flex';
+  document.getElementById('orgTab-shifts').scrollIntoView({ behavior: 'smooth' });
+}
+
+function cancelEditShift() {
+  state.editingShiftId = null;
+  ['newShiftName'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('newShiftStart').value = '08:45';
+  document.getElementById('newShiftEnd').value = '16:45';
+  document.getElementById('newShiftGrace').value = '15';
+  document.getElementById('newShiftTarget').value = '8';
+  document.getElementById('shiftFormTitle').textContent = 'Add Shift Template';
+  document.getElementById('shiftSubmitBtn').textContent = '+ Add Shift';
+  document.getElementById('shiftCancelBtn').style.display = 'none';
+}
+
+async function deleteShift(id) {
+  if (!confirm('Delete this shift template? Departments/employees using it will fall back to no override.')) return;
+  const res = await DB.deleteShift(id);
+  toast(res.success ? 'Shift deleted.' : res.message, res.success ? 'success' : 'error');
+  if (res.success) { await loadReferenceData(); loadShifts(); }
 }
 
 async function addShift() {
@@ -575,9 +653,18 @@ async function addShift() {
     target_hours: parseFloat(document.getElementById('newShiftTarget').value) || 8
   };
   if (!shift.name) return toast('Enter a shift name.', 'error');
-  const res = await DB.addShift(shift);
-  if (res.success) { toast('Shift added.', 'success'); document.getElementById('newShiftName').value=''; await loadReferenceData(); loadShifts(); }
-  else toast(res.message, 'error');
+
+  let res;
+  if (state.editingShiftId) {
+    res = await DB.updateShift(state.editingShiftId, shift);
+  } else {
+    res = await DB.addShift(shift);
+  }
+  if (res.success) {
+    toast(state.editingShiftId ? 'Shift updated.' : 'Shift added.', 'success');
+    cancelEditShift();
+    await loadReferenceData(); loadShifts();
+  } else toast(res.message, 'error');
 }
 
 async function loadAllEmployees() {
@@ -673,42 +760,102 @@ async function loadProfiles() {
     <td><strong>${p.username}</strong></td><td>${p.full_name||'—'}</td>
     <td><span class="badge badge-${roleCls[p.role]}">${p.role}</span></td>
     <td>${p.departments?.name||'—'}</td><td class="text-mono">${p.emp_id||'—'}</td>
-    <td><button class="btn btn-ghost btn-sm" onclick='openRoleModal(${JSON.stringify(p).replace(/'/g,"&#39;")})'>Edit Access</button></td>
+    <td><button class="btn btn-ghost btn-sm" onclick='openRoleModal(${JSON.stringify(p).replace(/'/g,"&#39;")})'>Edit / Reset Password</button></td>
   </tr>`).join('');
   wrap.innerHTML = `<table><thead><tr><th>Username</th><th>Full Name</th><th>Role</th><th>Department</th><th>Emp ID</th><th>Actions</th></tr></thead><tbody>${rows}</tbody></table>`;
+
+  // Populate the "New HOD" selector with real usernames (searchable via native select typing)
+  document.getElementById('reassignUsername').innerHTML = '<option value="">— Choose user —</option>' +
+    profiles.map(p => `<option value="${p.username}">${p.username} (${p.full_name||''})</option>`).join('');
+}
+
+function toggleAccountFields() {
+  const role = document.getElementById('newAccRole').value;
+  document.getElementById('newAccDeptWrap').style.display = (role === 'HOD') ? 'block' : (role === 'Employee' ? 'block' : 'none');
+  document.getElementById('newAccEmpWrap').style.display = (role === 'Employee') ? 'block' : 'none';
+}
+
+async function populateEmployeePickers() {
+  const allEmp = await DB.listEmployees();
+  const options = '<option value="">— None —</option>' + allEmp.map(e => `<option value="${e.emp_id}">${e.emp_id} — ${e.name}</option>`).join('');
+  document.getElementById('newAccEmpId').innerHTML = options;
+  document.getElementById('roleEmpSelect').innerHTML = options;
+}
+
+async function populateReportEmployeePicker() {
+  const allEmp = await DB.listEmployees();
+  document.getElementById('rptEmpId').innerHTML = '<option value="">— All Employees —</option>' +
+    allEmp.map(e => `<option value="${e.emp_id}">${e.emp_id} — ${e.name} (${e.departments?.name||''})</option>`).join('');
+}
+
+async function createAccount() {
+  const payload = {
+    full_name: document.getElementById('newAccFullName').value.trim(),
+    username: document.getElementById('newAccUsername').value.trim(),
+    email: document.getElementById('newAccEmail').value.trim(),
+    password: document.getElementById('newAccPassword').value,
+    role: document.getElementById('newAccRole').value,
+    department_id: document.getElementById('newAccDept').value || null,
+    emp_id: document.getElementById('newAccEmpId').value || null
+  };
+  if (!payload.username || !payload.email || !payload.password) return toast('Username, email, and password are required.', 'error');
+
+  toast('Creating account…', 'info');
+  const res = await DB.createUserAccount(payload);
+  if (res.success) {
+    toast('Account created successfully.', 'success');
+    ['newAccFullName','newAccUsername','newAccEmail','newAccPassword'].forEach(id => document.getElementById(id).value = '');
+    loadProfiles();
+  } else toast(res.message, 'error');
 }
 
 function openRoleModal(profile) {
   document.getElementById('roleUsername').textContent = profile.username;
   document.getElementById('roleSelect').value = profile.role;
   document.getElementById('roleDeptSelect').value = profile.department_id || '';
-  document.getElementById('roleEmpId').value = profile.emp_id || '';
+  document.getElementById('roleEmpSelect').value = profile.emp_id || '';
+  document.getElementById('roleNewPassword').value = '';
   state.roleTarget = profile.username;
+  state.roleTargetId = profile.id;
   openModal('roleModal');
 }
 
 async function saveRole() {
   const role = document.getElementById('roleSelect').value;
   const deptId = document.getElementById('roleDeptSelect').value || null;
-  const empId = document.getElementById('roleEmpId').value.trim() || null;
+  const empId = document.getElementById('roleEmpSelect').value || null;
+  const newPassword = document.getElementById('roleNewPassword').value;
+
   const res = await DB.setUserRole(state.roleTarget, role, deptId, empId);
-  toast(res.success ? 'Access updated.' : res.message, res.success?'success':'error');
-  if (res.success) { closeModal('roleModal'); loadProfiles(); }
+  if (!res.success) return toast(res.message, 'error');
+
+  if (newPassword) {
+    if (newPassword.length < 6) return toast('New password must be at least 6 characters.', 'error');
+    const pwRes = await DB.resetUserPassword(state.roleTargetId, newPassword);
+    if (!pwRes.success) return toast('Access updated, but password reset failed: ' + pwRes.message, 'error');
+    toast('Access updated and password reset.', 'success');
+  } else {
+    toast('Access updated.', 'success');
+  }
+  closeModal('roleModal');
+  loadProfiles();
 }
 
 async function reassignHod() {
   const deptId = document.getElementById('reassignDept').value;
-  const username = document.getElementById('reassignUsername').value.trim();
-  if (!username) return toast('Enter the new HOD username.', 'error');
+  const username = document.getElementById('reassignUsername').value;
+  if (!username) return toast('Choose the new HOD.', 'error');
   const res = await DB.reassignHod(deptId, username);
   toast(res.success ? 'HOD reassigned successfully.' : res.message, res.success?'success':'error');
-  if (res.success) { document.getElementById('reassignUsername').value=''; loadProfiles(); }
+  if (res.success) loadProfiles();
 }
 
 async function loadCalendar() {
-  const settings = await DB.listCalendarSettings();
+  const allSettings = await DB.listCalendarSettings();
+  const sixMonthsAgo = new Date(); sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+  const settings = allSettings.filter(s => new Date(s.date) >= sixMonthsAgo);
   const wrap = document.getElementById('calendarWrap');
-  if (!settings.length) { wrap.innerHTML = '<div class="empty-state">No calendar rules yet.</div>'; return; }
+  if (!settings.length) { wrap.innerHTML = '<div class="empty-state">No calendar rules in the last 6 months (or upcoming).</div>'; return; }
   const typeColors = { Holiday:'#dbeafe', 'Working Weekend':'#d1fae5', Custom:'#fef3c7' };
   const rows = settings.slice().reverse().map(s => `<tr>
     <td class="text-mono">${new Date(s.date).toLocaleDateString('en-GB')}</td>
@@ -818,7 +965,7 @@ async function generateReport() {
   const deptId = document.getElementById('rptDept').value;
   const start = document.getElementById('rptStart').value;
   const end = document.getElementById('rptEnd').value;
-  const empId = document.getElementById('rptEmpId').value.trim();
+  const empId = document.getElementById('rptEmpId').value;
   if (!start || !end) return toast('Select both dates.', 'error');
 
   toast('Generating report…', 'info');
@@ -834,25 +981,131 @@ async function generateReport() {
     for (const e of allEmp) { const r = await DB.getEmployeeReport(e.emp_id, start, end); if (r) report.push(r); }
   }
   state.lastReport = report;
+  state.lastReportRange = { start, end };
+
   if (!report.length) { document.getElementById('reportTableWrap').innerHTML = '<div class="empty-state">No data for this range.</div>'; return; }
 
+  if (empId && report.length === 1) {
+    await renderIndividualReport(report[0], start, end);
+  } else {
+    renderSummaryReport(report);
+  }
+  toast('Report ready.', 'success');
+}
+
+function renderSummaryReport(report) {
   const rows = report.map(r => `<tr>
-    <td><strong>${r.emp_id}</strong></td><td>${r.name}</td><td>${r.department}</td><td>${r.working_days}</td>
+    <td><strong>${r.emp_id}</strong></td><td>${r.name}</td><td>${r.department}</td><td>${r.designation||'—'}</td>
     <td>${hrs(r.required_hours)}</td><td>${hrs(r.spent_hours)}</td><td>${hrs(r.remaining_hours)}</td>
     <td style="color:var(--warning);">${hrs(r.overtime_hours)}</td>
     <td style="color:${r.absent_days>0?'var(--danger)':'var(--success)'};font-weight:700;">${r.absent_days}</td>
-    <td>${r.late_days}</td><td>${r.leave_casual}/${r.leave_earned}/${r.leave_official}/${r.leave_unpaid}</td>
+    <td>${r.late_days}</td>
     <td style="color:${r.attendance_pct>=80?'var(--success)':'var(--danger)'};font-weight:700;">${r.attendance_pct}%</td>
+    <td><button class="btn btn-ghost btn-sm" onclick="drillIntoEmployee('${r.emp_id}')">Details</button></td>
   </tr>`).join('');
   document.getElementById('reportTableWrap').innerHTML = `<div class="table-wrap"><table>
-    <thead><tr><th>ID</th><th>Name</th><th>Dept</th><th>Days</th><th>Required</th><th>Spent</th><th>Remaining</th><th>OT</th><th>Absent</th><th>Late</th><th>Leave C/E/O/U</th><th>%</th></tr></thead>
+    <thead><tr><th>ID</th><th>Name</th><th>Department</th><th>Designation</th><th>Required</th><th>Spent</th><th>Remaining</th><th>OT</th><th>Absent</th><th>Late</th><th>%</th><th></th></tr></thead>
     <tbody>${rows}</tbody></table></div>`;
-  toast('Report ready.', 'success');
 }
+
+async function drillIntoEmployee(empId) {
+  document.getElementById('rptEmpId').value = empId;
+  await generateReport();
+}
+
+async function renderIndividualReport(r, start, end) {
+  const records = await DB.getAttendance(r.emp_id, start, end);
+  const rows = records.map(rec => `<tr>
+    <td>${new Date(rec.date).toLocaleDateString('en-GB',{weekday:'short',day:'2-digit',month:'short'})}</td>
+    <td>${rec.check_in || '—'}</td><td>${rec.check_out || '—'}</td>
+    <td>${statusBadge(rec.status)}</td><td>${hrs(rec.total_hours)}</td>
+    <td style="color:var(--warning);">${hrs(rec.overtime_hours)}</td>
+    <td><button class="btn btn-ghost btn-sm" onclick='openAttEdit("${r.emp_id}","${rec.date}","${rec.check_in||''}","${rec.check_out||''}")'>✎ Edit</button></td>
+  </tr>`).join('');
+
+  document.getElementById('reportTableWrap').innerHTML = `
+    <button class="btn btn-ghost btn-sm" onclick="document.getElementById('rptEmpId').value='';generateReport();" style="margin-bottom:12px;">← Back to summary</button>
+    <div class="card" id="individualReportPrintable">
+      <div class="card-body">
+        <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-bottom:18px;">
+          <div>
+            <div style="font-size:17px;font-weight:700;color:var(--navy);">${r.name}</div>
+            <div class="text-muted" style="font-size:13px;">${r.designation||'—'} • ${r.department} • ID: ${r.emp_id}</div>
+            <div class="text-muted" style="font-size:12px;margin-top:4px;">Period: ${new Date(start).toLocaleDateString('en-GB')} to ${new Date(end).toLocaleDateString('en-GB')}</div>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="openAddManualEntry('${r.emp_id}')">+ Add Manual Entry</button>
+        </div>
+        <div class="summary-bar">
+          <div class="summary-chip">📅 Work Days: <span>${r.working_days}</span></div>
+          <div class="summary-chip">🎯 Required: <span>${hrs(r.required_hours)}</span></div>
+          <div class="summary-chip">✅ Spent: <span>${hrs(r.spent_hours)}</span></div>
+          <div class="summary-chip">⏳ Remaining: <span>${hrs(r.remaining_hours)}</span></div>
+          <div class="summary-chip">🔥 Overtime: <span style="color:var(--warning)">${hrs(r.overtime_hours)}</span></div>
+          <div class="summary-chip">❌ Absent: <span style="color:${r.absent_days>0?'var(--danger)':'var(--success)'}">${r.absent_days}</span></div>
+          <div class="summary-chip">⏰ Late: <span>${r.late_days}</span></div>
+          <div class="summary-chip">📊 Attendance: <span style="color:${r.attendance_pct>=80?'var(--success)':'var(--danger)'};font-size:15px;">${r.attendance_pct}%</span></div>
+          <div class="summary-chip">🏖 Leave (C/E/O/U): <span>${r.leave_casual}/${r.leave_earned}/${r.leave_official}/${r.leave_unpaid}</span></div>
+        </div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Date</th><th>Check-In</th><th>Check-Out</th><th>Status</th><th>Hours</th><th>Overtime</th><th>Action</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table></div>
+      </div>
+    </div>`;
+}
+
+function openAddManualEntry(empId) {
+  const d = prompt('Enter the date for this manual entry (YYYY-MM-DD):', new Date().toISOString().split('T')[0]);
+  if (!d) return;
+  openAttEdit(empId, d, '', '');
+}
+
+function openAttEdit(empId, date, inT, outT) {
+  document.getElementById('editEmpId').value = empId;
+  document.getElementById('editDate').value = date;
+  document.getElementById('editAttLabel').textContent = 'Editing ' + empId + ' — ' + new Date(date).toLocaleDateString('en-GB');
+  document.getElementById('editIn').value = (inT && inT !== 'Missing') ? inT.slice(0,5) : '';
+  document.getElementById('editOut').value = (outT && outT !== 'Missing') ? outT.slice(0,5) : '';
+  openModal('editAttModal');
+}
+
+function computeStatusAndHours(inT, outT) {
+  const toMins = t => { if (!t) return null; const [h,m] = t.split(':').map(Number); return h*60+m; };
+  const inMins = toMins(inT), outMins = toMins(outT);
+  let status = 'Missing Punch';
+  if (inMins !== null) {
+    const hour = Math.floor(inMins/60);
+    if (hour <= 10) status = 'Present';
+    else if (hour <= 12) status = 'Late Arrival';
+    else if (hour <= 18) status = 'Half Day';
+    else status = 'Late Stay';
+  }
+  const totalHours = (inMins !== null && outMins !== null && outMins > inMins) ? +((outMins-inMins)/60).toFixed(2) : 0;
+  let otMins = 0;
+  if (inMins !== null && outMins !== null) {
+    if (inMins < 525) otMins += (525 - inMins);
+    if (outMins > 1005) otMins += (outMins - 1005);
+  }
+  const overtimeHours = otMins > 0 ? +(otMins/60).toFixed(2) : 0;
+  return { status, total_hours: totalHours, overtime_hours: overtimeHours,
+    check_in: inT ? inT : 'Missing', check_out: outT ? outT : 'Missing' };
+}
+
+async function saveAttEdit() {
+  const empId = document.getElementById('editEmpId').value;
+  const date = document.getElementById('editDate').value;
+  const inT = document.getElementById('editIn').value;
+  const outT = document.getElementById('editOut').value;
+  const fields = computeStatusAndHours(inT, outT);
+  const res = await DB.updateAttendanceRecord(empId, date, fields);
+  toast(res.success ? 'Record saved.' : res.message, res.success ? 'success' : 'error');
+  if (res.success) { closeModal('editAttModal'); const range = state.lastReportRange; const r = await DB.getEmployeeReport(empId, range.start, range.end); if (r) await renderIndividualReport(r, range.start, range.end); }
+}
+
 function exportReport() {
   if (!state.lastReport?.length) return toast('Generate a report first.', 'error');
-  const rows = [['Emp ID','Name','Department','Working Days','Required Hrs','Spent Hrs','Remaining Hrs','Overtime Hrs','Absent','Late','Casual','Earned','Official','Unpaid','Attendance %']];
-  state.lastReport.forEach(r => rows.push([r.emp_id,r.name,r.department,r.working_days,r.required_hours,r.spent_hours,r.remaining_hours,r.overtime_hours,r.absent_days,r.late_days,r.leave_casual,r.leave_earned,r.leave_official,r.leave_unpaid,r.attendance_pct]));
+  const rows = [['Emp ID','Name','Department','Designation','Required Hrs','Spent Hrs','Remaining Hrs','Overtime Hrs','Absent','Late','Attendance %']];
+  state.lastReport.forEach(r => rows.push([r.emp_id,r.name,r.department,r.designation,r.required_hours,r.spent_hours,r.remaining_hours,r.overtime_hours,r.absent_days,r.late_days,r.attendance_pct]));
   const ws = XLSX.utils.aoa_to_sheet(rows);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Report');
@@ -860,9 +1113,56 @@ function exportReport() {
   toast('Excel file downloaded.', 'success');
 }
 
+function exportReportPDF() {
+  if (!state.lastReport?.length) return toast('Generate a report first.', 'error');
+  const start = document.getElementById('rptStart').value, end = document.getElementById('rptEnd').value;
+  const isIndividual = state.lastReport.length === 1 && document.getElementById('rptEmpId').value;
+
+  let bodyHtml;
+  if (isIndividual) {
+    const printable = document.getElementById('individualReportPrintable');
+    bodyHtml = printable ? printable.innerHTML : '<p>No detail available.</p>';
+  } else {
+    const rowsHtml = state.lastReport.map(r => `<tr>
+      <td>${r.emp_id}</td><td>${r.name}</td><td>${r.department}</td><td>${r.designation||'—'}</td>
+      <td>${r.required_hours}h</td><td>${r.spent_hours}h</td><td>${r.remaining_hours}h</td>
+      <td>${r.overtime_hours}h</td><td>${r.absent_days}</td><td>${r.late_days}</td><td>${r.attendance_pct}%</td>
+    </tr>`).join('');
+    bodyHtml = `<table style="width:100%;border-collapse:collapse;font-size:11px;">
+      <thead><tr style="background:#0A2540;color:#fff;">
+        <th style="padding:6px;">ID</th><th style="padding:6px;">Name</th><th style="padding:6px;">Dept</th><th style="padding:6px;">Designation</th>
+        <th style="padding:6px;">Required</th><th style="padding:6px;">Spent</th><th style="padding:6px;">Remaining</th>
+        <th style="padding:6px;">OT</th><th style="padding:6px;">Absent</th><th style="padding:6px;">Late</th><th style="padding:6px;">%</th>
+      </tr></thead><tbody>${rowsHtml.replace(/<td>/g,'<td style="padding:6px;border-bottom:1px solid #e2e8f0;">')}</tbody></table>`;
+  }
+
+  const container = document.createElement('div');
+  container.style.cssText = 'font-family:Arial,sans-serif;color:#1a2b3c;padding:10px;';
+  container.innerHTML = `
+    <div style="text-align:center;border-bottom:3px solid #0A2540;padding-bottom:14px;margin-bottom:20px;">
+      <h1 style="color:#0A2540;font-size:20px;margin:0;">FAST-NUCES Multan Campus</h1>
+      <p style="color:#64748B;font-size:12px;margin:4px 0 0;">Official Attendance Report</p>
+      <p style="color:#64748B;font-size:11px;margin:2px 0 0;">Period: ${new Date(start).toLocaleDateString('en-GB')} — ${new Date(end).toLocaleDateString('en-GB')}</p>
+    </div>
+    ${bodyHtml}
+    <div style="margin-top:24px;padding-top:12px;border-top:1px solid #e2e8f0;text-align:center;color:#94a3b8;font-size:10px;">
+      Generated on ${new Date().toLocaleString()} — FAST-NUCES Multan Attendance Portal
+    </div>`;
+
+  toast('Preparing PDF…', 'info');
+  html2pdf().set({
+    margin: 10,
+    filename: `Attendance_Report_${start}_to_${end}.pdf`,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2 },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: isIndividual ? 'portrait' : 'landscape' }
+  }).from(container).save().then(() => toast('PDF downloaded.', 'success'));
+}
+
 async function loadAudit() {
   const wrap = document.getElementById('auditTableWrap');
   wrap.innerHTML = '<div class="empty-state">Loading…</div>';
+  await DB.cleanupOldAuditLogs();
   const logs = await DB.listAuditLogs(300);
   if (!logs.length) { wrap.innerHTML = '<div class="empty-state">No audit records yet.</div>'; return; }
   const rows = logs.map(l => `<tr>
