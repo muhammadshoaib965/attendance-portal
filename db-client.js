@@ -13,14 +13,31 @@
  */
 
 // ──────────────────────────────────────────────────────────────
-// CONFIG — paste your two Supabase keys here (Project Settings → API)
+// CONFIG — fetched at runtime from /api/config, never hardcoded here.
+// Set SUPABASE_URL and SUPABASE_ANON_KEY in Vercel's Environment
+// Variables panel (Project Settings → Environment Variables).
 // ──────────────────────────────────────────────────────────────
-const SUPABASE_URL = 'https://zhjczzddwcdewgjojuhl.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpoamN6emRkd2NkZXdnam9qdWhsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4MDM1MDUsImV4cCI6MjEwMDM3OTUwNX0.LXcfPZLz-M4CEp-S4bdCMrbKqavMRP4lvnKPFm6g7Vk';
+let supabaseClient = null;
+let _readyResolve;
+const _ready = new Promise(resolve => { _readyResolve = resolve; });
 
-const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+(async function initSupabase() {
+  try {
+    const res = await fetch('/api/config');
+    const cfg = await res.json();
+    if (!cfg.url || !cfg.anonKey) {
+      console.error('Supabase config missing — check environment variables in Vercel.');
+      return;
+    }
+    supabaseClient = window.supabase.createClient(cfg.url, cfg.anonKey);
+  } catch (e) {
+    console.error('Failed to load Supabase config:', e.message);
+  } finally {
+    _readyResolve();
+  }
+})();
 
-const DB = {
+const _DB_impl = {
 
   // ============================================================
   // AUTH
@@ -384,5 +401,21 @@ const DB = {
     return error ? [] : data;
   },
 };
+
+// Wraps every DB method so it automatically waits for the Supabase
+// client to finish initializing (from /api/config) before running —
+// no need to manually await readiness anywhere else in the app.
+const DB = new Proxy(_DB_impl, {
+  get(target, prop) {
+    const orig = target[prop];
+    if (typeof orig === 'function') {
+      return async function (...args) {
+        await _ready;
+        return orig.apply(target, args);
+      };
+    }
+    return orig;
+  }
+});
 
 window.DB = DB;
