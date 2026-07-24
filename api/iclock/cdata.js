@@ -51,6 +51,20 @@ module.exports = async function handler(req, res) {
       return;
     }
 
+    // Only accept punches from a device that is registered AND active.
+    // This is what actually makes the "Deactivate" button in Machines do something.
+    const svcHeaders = {
+      apikey: process.env.SUPABASE_SERVICE_KEY,
+      Authorization: `Bearer ${process.env.SUPABASE_SERVICE_KEY}`
+    };
+    const devRes = await fetch(`${process.env.SUPABASE_URL}/rest/v1/devices?serial_number=eq.${encodeURIComponent(sn)}&select=active`, { headers: svcHeaders });
+    const devRows = await devRes.json().catch(() => []);
+    if (!devRows.length || devRows[0].active !== true) {
+      console.log('Ignored punch batch from', sn, '- device not registered or deactivated.');
+      res.status(200).send('OK'); // still ACK so the device doesn't retry endlessly
+      return;
+    }
+
     for (const record of records) {
       try {
         const r = await fetch(`${process.env.SUPABASE_URL}/rest/v1/rpc/handle_realtime_punch`, {
